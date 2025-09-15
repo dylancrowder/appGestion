@@ -21,10 +21,8 @@ import { AvatarFallback, AvatarImage } from "@radix-ui/react-avatar"
 import { DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu"
 
 export const items = [
-  { title: "Punto de venta", url: "/dashboard", icon: ShoppingCart },
-  { title: "Gestión de empleados", url: "/dashboard/employers", icon: Users },
-  { title: "Ventas", url: "/dashboard/sales", icon: DollarSign },
-  { title: "Crear Producto", url: "/dashboard/products/new", icon: PackagePlus },
+  { title: "Compras", url: "/", icon: ShoppingCart },
+  { title: "Gastos", url: "/gestion", icon: PackagePlus },
 ]
 
 export function AppSidebar() {
