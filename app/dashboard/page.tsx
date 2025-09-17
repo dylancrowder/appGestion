@@ -16,7 +16,7 @@ interface Product {
   quantity: number;
 }
 
-const CONVERSION_RATE = 1.53;
+const CONVERSION_RATE = 1.55;
 
 export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
