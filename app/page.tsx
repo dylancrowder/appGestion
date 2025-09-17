@@ -3,21 +3,28 @@ import Link from 'next/link'
 import React from 'react'
 
 const Welcome = () => {
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL
 
- const conext =  process.env.NEXT_PUBLIC_API_URL
   return (
-    <><div>Welcome</div>
-<h1>{conext}</h1>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
+        Backend: <span className="text-indigo-600">{backendUrl}</span>
+      </h1>
 
-    <Link href={"/dashboard"}>
-    <Button>Dashboard</Button>
-    </Link>
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Link href="/dashboard">
+          <Button variant="default" className="w-full sm:w-auto">
+            Dashboard
+          </Button>
+        </Link>
 
-     <Link href={"/login"}>
-    <Button>Login</Button>
-    </Link>
-
-    </>
+        <Link href="/login">
+          <Button variant="outline" className="w-full sm:w-auto">
+            Login
+          </Button>
+        </Link>
+      </div>
+    </div>
   )
 }
 
