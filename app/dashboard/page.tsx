@@ -6,8 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Pencil, Trash2, ArrowDownAZ } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 
+// --- Types ---
 interface Product {
   _id: string;
   name: string;
@@ -16,42 +20,68 @@ interface Product {
   quantity: number;
 }
 
+// --- Constants ---
 const CONVERSION_RATE = 1.55;
+
+// --- Validation Schema ---
+const productSchema = z.object({
+  name: z.string().min(1, "El nombre es requerido"),
+  costCLP: z.string().min(1, "El costo en CLP es requerido"),
+  priceARS: z.string().min(1, "El precio en ARS es requerido"),
+  quantity: z.string().min(1, "La cantidad es requerida"),
+});
+
+type ProductFormData = z.infer<typeof productSchema>;
 
 export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    name: "",
-    costCLP: "",
-    priceARS: "",
-    quantity: "1",
-  });
   const [sortByProfit, setSortByProfit] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  // --- React Hook Form ---
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<ProductFormData>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: "",
+      costCLP: "",
+      priceARS: "",
+      quantity: "1",
+    },
+  });
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
   const fetchProducts = async () => {
+    if (!API_URL) {
+      toast.error("API_URL no está definida");
+      return;
+    }
     try {
       const res = await fetch(`${API_URL}/compras`);
       if (!res.ok) throw new Error("Error cargando productos");
       const data = await res.json();
       setProducts(data);
     } catch (err: any) {
-      toast({ title: "❌ Error", description: err.message });
+      toast.error("Error al cargar productos");
+      console.error(err);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleAdd = async () => {
-    if (!form.name || !form.costCLP || !form.priceARS) return;
+  const onSubmit = async (form: ProductFormData) => {
+    if (!API_URL) {
+      toast.error("API_URL no está definida");
+      return;
+    }
 
     const newProduct = {
       name: form.name,
@@ -69,9 +99,12 @@ export default function ProductList() {
           body: JSON.stringify(newProduct),
         });
         if (!res.ok) throw new Error("Error al actualizar producto");
-        setProducts(products.map(p => (p._id === editingId ? { ...p, ...newProduct } : p)));
+
+        setProducts((prev) =>
+          prev.map((p) => (p._id === editingId ? { ...p, ...newProduct } : p))
+        );
         setEditingId(null);
-        toast({ title: "✅ Producto editado correctamente" });
+        toast.success("Producto editado correctamente");
       } else {
         // Agregar producto
         const res = await fetch(`${API_URL}/compras/create`, {
@@ -80,35 +113,39 @@ export default function ProductList() {
           body: JSON.stringify(newProduct),
         });
         if (!res.ok) throw new Error("Error al guardar producto");
-        const data = await res.json();
-        setProducts([...products, { ...newProduct, _id: data._id }]);
-        toast({ title: "🛒 Producto agregado en backend", description: `ID: ${data._id}` });
-      }
-    } catch (err: any) {
-      toast({ title: "❌ Error", description: err.message });
-    }
 
-    setForm({ name: "", costCLP: "", priceARS: "", quantity: "1" });
+        const data = await res.json();
+        setProducts((prev) => [...prev, { ...newProduct, _id: data._id }]);
+        toast.success("Producto agregado correctamente");
+      }
+      reset();
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Ocurrió un error");
+    }
   };
 
   const handleEdit = (product: Product) => {
     setEditingId(product._id);
-    setForm({
-      name: product.name,
-      costCLP: product.costCLP.toString(),
-      priceARS: product.priceARS.toString(),
-      quantity: product.quantity.toString(),
-    });
+    setValue("name", product.name);
+    setValue("costCLP", product.costCLP.toString());
+    setValue("priceARS", product.priceARS.toString());
+    setValue("quantity", product.quantity.toString());
   };
 
   const handleDelete = async (_id: string) => {
+    if (!API_URL) {
+      toast.error("API_URL no está definida");
+      return;
+    }
     try {
       const res = await fetch(`${API_URL}/compras/${_id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Error al eliminar producto");
-      setProducts(products.filter(p => p._id !== _id));
-      toast({ title: "🗑️ Producto eliminado" });
+      setProducts((prev) => prev.filter((p) => p._id !== _id));
+      toast.success("Producto eliminado correctamente");
     } catch (err: any) {
-      toast({ title: "❌ Error", description: err.message });
+      console.error(err);
+      toast.error("Error al eliminar producto");
     }
   };
 
@@ -130,49 +167,32 @@ export default function ProductList() {
         <CardHeader>
           <CardTitle>🛒 Agregar producto</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4">
-          <div>
-            <Label>Nombre del producto</Label>
-            <Input
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              placeholder="Ej: Tabla Skate"
-            />
-          </div>
-          <div>
-            <Label>Precio en CLP (costo)</Label>
-            <Input
-              type="number"
-              name="costCLP"
-              value={form.costCLP}
-              onChange={handleChange}
-              placeholder="Ej: 20000"
-            />
-          </div>
-          <div>
-            <Label>Precio en ARS (venta)</Label>
-            <Input
-              type="number"
-              name="priceARS"
-              value={form.priceARS}
-              onChange={handleChange}
-              placeholder="Ej: 50000"
-            />
-          </div>
-          <div>
-            <Label>Cantidad</Label>
-            <Input
-              type="number"
-              name="quantity"
-              value={form.quantity}
-              onChange={handleChange}
-              placeholder="Ej: 2"
-            />
-          </div>
-          <Button onClick={handleAdd} className="w-full">
-            {editingId ? "Guardar cambios" : "Agregar producto"}
-          </Button>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+            <div>
+              <Label>Nombre del producto</Label>
+              <Input {...register("name")} placeholder="Ej: Tabla Skate" />
+              {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+            </div>
+            <div>
+              <Label>Precio en CLP (costo)</Label>
+              <Input type="number" {...register("costCLP")} placeholder="Ej: 20000" />
+              {errors.costCLP && <p className="text-red-500 text-sm">{errors.costCLP.message}</p>}
+            </div>
+            <div>
+              <Label>Precio en ARS (venta)</Label>
+              <Input type="number" {...register("priceARS")} placeholder="Ej: 50000" />
+              {errors.priceARS && <p className="text-red-500 text-sm">{errors.priceARS.message}</p>}
+            </div>
+            <div>
+              <Label>Cantidad</Label>
+              <Input type="number" {...register("quantity")} placeholder="Ej: 2" />
+              {errors.quantity && <p className="text-red-500 text-sm">{errors.quantity.message}</p>}
+            </div>
+            <Button type="submit" className="w-full">
+              {editingId ? "Guardar cambios" : "Agregar producto"}
+            </Button>
+          </form>
         </CardContent>
       </Card>
 
@@ -190,11 +210,9 @@ export default function ProductList() {
           </Button>
         </CardHeader>
         <CardContent className="grid gap-4">
-          {sortedProducts.length === 0 && (
-            <p className="text-center text-gray-500">No hay productos agregados</p>
-          )}
+          {sortedProducts.length === 0 && <p className="text-center text-gray-500">No hay productos agregados</p>}
 
-          {/* Tabla en desktop */}
+          {/* Tabla desktop */}
           <div className="hidden sm:block">
             <table className="w-full border-collapse">
               <thead>
@@ -212,36 +230,21 @@ export default function ProductList() {
               <tbody>
                 {sortedProducts.map((p) => {
                   const totalCLPItem = p.costCLP * p.quantity;
-                  const profit =
-                    (p.priceARS - p.costCLP * CONVERSION_RATE) * p.quantity;
+                  const profit = (p.priceARS - p.costCLP * CONVERSION_RATE) * p.quantity;
                   return (
                     <tr key={p._id} className="even:bg-muted/20">
                       <td className="p-2">{p.name}</td>
                       <td className="p-2">{p.costCLP.toLocaleString()} CLP</td>
-                      <td className="p-2">
-                        {totalCLPItem.toLocaleString()} CLP
-                      </td>
-                      <td className="p-2">
-                        {Math.round(p.costCLP * CONVERSION_RATE).toLocaleString()} ARS
-                      </td>
+                      <td className="p-2">{totalCLPItem.toLocaleString()} CLP</td>
+                      <td className="p-2">{Math.round(p.costCLP * CONVERSION_RATE).toLocaleString()} ARS</td>
                       <td className="p-2">{p.priceARS.toLocaleString()} ARS</td>
                       <td className="p-2">{p.quantity}</td>
-                      <td className="p-2 text-green-600 font-semibold">
-                        {Math.round(profit).toLocaleString()} ARS
-                      </td>
+                      <td className="p-2 text-green-600 font-semibold">{Math.round(profit).toLocaleString()} ARS</td>
                       <td className="p-2 flex gap-2">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleEdit(p)}
-                        >
+                        <Button size="icon" variant="ghost" onClick={() => handleEdit(p)}>
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleDelete(p._id)}
-                        >
+                        <Button size="icon" variant="ghost" onClick={() => handleDelete(p._id)}>
                           <Trash2 className="w-4 h-4 text-red-500" />
                         </Button>
                       </td>
@@ -252,40 +255,27 @@ export default function ProductList() {
             </table>
           </div>
 
-          {/* Cards en mobile */}
+          {/* Cards mobile */}
           <div className="sm:hidden flex flex-col gap-4">
             {sortedProducts.map((p) => {
               const totalCLPItem = p.costCLP * p.quantity;
-              const profit =
-                (p.priceARS - p.costCLP * CONVERSION_RATE) * p.quantity;
+              const profit = (p.priceARS - p.costCLP * CONVERSION_RATE) * p.quantity;
               return (
                 <Card key={p._id} className="p-4 bg-muted/10">
                   <p className="font-semibold">{p.name}</p>
                   <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
                     <div>Costo (CLP): {p.costCLP.toLocaleString()}</div>
                     <div>Total (CLP): {totalCLPItem.toLocaleString()}</div>
-                    <div>
-                      Costo (ARS): {Math.round(p.costCLP * CONVERSION_RATE).toLocaleString()}
-                    </div>
+                    <div>Costo (ARS): {Math.round(p.costCLP * CONVERSION_RATE).toLocaleString()}</div>
                     <div>Venta (ARS): {p.priceARS.toLocaleString()}</div>
                     <div>Cantidad: {p.quantity}</div>
-                    <div className="text-green-600 font-semibold">
-                      Ganancia: {Math.round(profit).toLocaleString()}
-                    </div>
+                    <div className="text-green-600 font-semibold">Ganancia: {Math.round(profit).toLocaleString()}</div>
                   </div>
                   <div className="flex gap-2 mt-2">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleEdit(p)}
-                    >
+                    <Button size="icon" variant="ghost" onClick={() => handleEdit(p)}>
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleDelete(p._id)}
-                    >
+                    <Button size="icon" variant="ghost" onClick={() => handleDelete(p._id)}>
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
                   </div>

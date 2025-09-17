@@ -1,9 +1,12 @@
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-import React from 'react'
+"use client";
+
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import React from "react";
+import { toast } from "sonner"; // import correcto de Sonner
 
 const Welcome = () => {
-  const backendUrl = process.env.NEXT_PUBLIC_API_URL
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
@@ -11,7 +14,7 @@ const Welcome = () => {
         Backend: <span className="text-indigo-600">{backendUrl}</span>
       </h1>
 
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <Link href="/dashboard">
           <Button variant="default" className="w-full sm:w-auto">
             Dashboard
@@ -24,8 +27,10 @@ const Welcome = () => {
           </Button>
         </Link>
       </div>
-    </div>
-  )
-}
 
-export default Welcome
+ 
+    </div>
+  );
+};
+
+export default Welcome;

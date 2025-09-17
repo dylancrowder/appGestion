@@ -28,27 +28,9 @@ export const items = [
 ];
 
 export function AppSidebar() {
-  const [date, setDate] = useState<string>("");
-  const [time, setTime] = useState<string>("");
+  
 
-  // Actualizamos fecha y hora cada minuto
-  useEffect(() => {
-    const updateDate = () => {
-      const now = new Date();
-      setDate(now.toLocaleDateString("es-AR", { weekday: "long", month: "long", day: "numeric" }));
-      setTime(now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }));
-    };
-    updateDate();
-    const interval = setInterval(updateDate, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
-  // Simulamos clima
-  const weather = {
-    temp: "25°C",
-    icon: <Sun className="w-5 h-5 text-yellow-500" />,
-    description: "Soleado",
-  };
 
   return (
     <Sidebar>
@@ -81,13 +63,6 @@ export function AppSidebar() {
           </DropdownMenu>
         </div>
 
-        {/* Fecha y clima */}
-        <div className="flex flex-col mt-2 text-sm text-gray-600">
-          <span>{date}</span>
-          <span className="flex items-center gap-1">
-            {weather.icon} {weather.temp} - {weather.description}
-          </span>
-        </div>
       </div>
 
       {/* Contenido principal */}
