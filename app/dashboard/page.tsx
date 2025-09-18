@@ -38,6 +38,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Separator } from "@radix-ui/react-separator";
 
 // --- Types ---
 interface Product {
@@ -366,56 +367,88 @@ export default function ProductList() {
           </div>
 
           {/* Cards mobile con acordeón */}
-          <div className="sm:hidden flex flex-col gap-4">
-            {sortedProducts.map((p) => {
-              const totalCLPItem = p.costCLP * p.quantity;
-              const profit = (p.priceARS - p.costCLP * conversionRate) * p.quantity;
+   
+<div className="sm:hidden flex flex-col gap-4">
+  {sortedProducts.map((p) => {
+    const totalCLPItem = p.costCLP * p.quantity;
+    const profit = (p.priceARS - p.costCLP * conversionRate) * p.quantity;
 
-              return (
-                <Card key={p._id} className="p-4 bg-muted/10">
-                  <div className="flex justify-between items-center">
-                    <p className="font-semibold">{p.name}</p>
-                    <div className="flex gap-2">
-                      <Button size="icon" variant="ghost" title="Editar" onClick={() => handleEdit(p)}>
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="icon" variant="ghost" title="Eliminar">
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Esta acción no se puede deshacer. ¿Deseas eliminar {p.name}?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>CANCELAR</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => confirmDelete(p)}>
-                              ELIMINAR
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
-                    <div>Costo (CLP): {p.costCLP.toLocaleString()}</div>
-                    <div>Total (CLP): {totalCLPItem.toLocaleString()}</div>
-                    <div>Costo (ARS): {Math.round(p.costCLP * conversionRate).toLocaleString()}</div>
-                    <div>Venta (ARS): {p.priceARS.toLocaleString()}</div>
-                    <div>Cantidad: {p.quantity}</div>
-                    <div className={`${profit < 0 ? "text-red-600" : "text-green-600"} font-semibold`}>
-                      Ganancia: {Math.round(profit).toLocaleString()}
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
+    return (
+      <Card key={p._id} className="p-4 bg-muted/20 rounded-lg shadow-sm">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-3 border-b border-muted/40 pb-2">
+          <p className="font-semibold text-lg">{p.name}</p>
+          <div className="flex gap-2">
+            <Button size="icon" variant="ghost" title="Editar" onClick={() => handleEdit(p)}>
+              <Pencil className="w-5 h-5" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="icon" variant="ghost" title="Eliminar">
+                  <Trash2 className="w-5 h-5 text-red-500" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción no se puede deshacer. ¿Deseas eliminar <strong>{p.name}</strong>?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>CANCELAR</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => confirmDelete(p)}>ELIMINAR</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
+        </div>
+
+        {/* Details */}
+        <div className="flex flex-col gap-2 text-sm">
+          <div className="flex justify-between items-center p-2 rounded bg-muted/10">
+            <span className="font-medium text-muted-foreground">Costo (CLP):</span>
+            <span>${p.costCLP.toLocaleString()}</span>
+          </div>
+          
+          <div className="flex justify-between items-center p-2 rounded bg-muted/10">
+            <span className="font-medium text-muted-foreground">Total (CLP):</span>
+            <span>${totalCLPItem.toLocaleString()}</span>
+          </div>
+          
+          <div className="flex justify-between items-center p-2 rounded bg-muted/10">
+            <span className="font-medium text-muted-foreground">Costo (ARS):</span>
+            <span>${Math.round(p.costCLP * conversionRate).toLocaleString()}</span>
+          </div>
+          
+          <div className="flex justify-between items-center p-2 rounded bg-muted/10">
+            <span className="font-medium text-muted-foreground">Venta (ARS):</span>
+            <span>${p.priceARS.toLocaleString()}</span>
+          </div>
+
+          <div className="flex justify-between items-center p-2 rounded bg-muted/10">
+            <span className="font-medium text-muted-foreground">Cantidad:</span>
+            <span>{p.quantity}</span>
+          </div>
+        </div>
+
+        {/* Separator antes de Ganancia */}
+        <Separator className="my-2" />
+
+        {/* Profit */}
+        <div className="flex justify-between items-center mt-1">
+          <span className="font-semibold text-lg">Ganancia:</span>
+          <span className={`font-bold text-lg ${profit < 0 ? "text-red-600" : "text-green-600"}`}>
+            ${Math.round(profit).toLocaleString()}
+          </span>
+        </div>
+      </Card>
+    );
+  })}
+</div>
+
+
+{/* --------------------------- */}
         </CardContent>
       </Card>
 

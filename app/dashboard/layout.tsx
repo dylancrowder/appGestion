@@ -12,9 +12,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    
-      <body>
-        <SidebarProvider>
+    <>      
+      <SidebarProvider>
           <AppSidebar />
           <main className="w-full">
             <SidebarTrigger />
@@ -22,8 +21,10 @@ export default function RootLayout({
           </main>
            
         </SidebarProvider>
- 
-      </body>
+    </>
+
+
+   
 
   )
 }
