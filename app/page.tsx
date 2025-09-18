@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React from "react";
-import { toast } from "sonner"; // import correcto de Sonner
 
 const Welcome = () => {
   const backendUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -27,7 +26,6 @@ const Welcome = () => {
           </Button>
         </Link>
       </div>
-
  
     </div>
   );

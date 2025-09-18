@@ -1,15 +1,43 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Pencil, Trash2, ArrowDownAZ } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  ArrowDownAZ,
+  DollarSign,
+  TrendingUp,
+  Plus,
+  Package,
+} from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // --- Types ---
 interface Product {
@@ -20,8 +48,6 @@ interface Product {
   quantity: number;
 }
 
-// --- Constants ---
-const CONVERSION_RATE = 1.55;
 
 // --- Validation Schema ---
 const productSchema = z.object({
@@ -37,7 +63,8 @@ export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sortByProfit, setSortByProfit] = useState(false);
-
+  const [loading, setLoading] = useState(false);
+  const [conversionRate, setConversionRate] = useState(1.55);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // --- React Hook Form ---
@@ -46,7 +73,7 @@ export default function ProductList() {
     handleSubmit,
     reset,
     setValue,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -55,6 +82,7 @@ export default function ProductList() {
       priceARS: "",
       quantity: "1",
     },
+    mode: "onBlur",
   });
 
   useEffect(() => {
@@ -62,10 +90,8 @@ export default function ProductList() {
   }, []);
 
   const fetchProducts = async () => {
-    if (!API_URL) {
-      toast.error("API_URL no está definida");
-      return;
-    }
+    if (!API_URL) return toast.error("API_URL no está definida");
+    setLoading(true);
     try {
       const res = await fetch(`${API_URL}/compras`);
       if (!res.ok) throw new Error("Error cargando productos");
@@ -74,14 +100,13 @@ export default function ProductList() {
     } catch (err: any) {
       toast.error("Error al cargar productos");
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
   const onSubmit = async (form: ProductFormData) => {
-    if (!API_URL) {
-      toast.error("API_URL no está definida");
-      return;
-    }
+    if (!API_URL) return toast.error("API_URL no está definida");
 
     const newProduct = {
       name: form.name,
@@ -90,9 +115,9 @@ export default function ProductList() {
       quantity: parseInt(form.quantity) || 1,
     };
 
+    setLoading(true);
     try {
       if (editingId) {
-        // Editar producto
         const res = await fetch(`${API_URL}/compras/${editingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -103,10 +128,9 @@ export default function ProductList() {
         setProducts((prev) =>
           prev.map((p) => (p._id === editingId ? { ...p, ...newProduct } : p))
         );
-        setEditingId(null);
         toast.success("Producto editado correctamente");
+        setEditingId(null);
       } else {
-        // Agregar producto
         const res = await fetch(`${API_URL}/compras/create`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -122,6 +146,8 @@ export default function ProductList() {
     } catch (err: any) {
       console.error(err);
       toast.error("Ocurrió un error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -131,65 +157,113 @@ export default function ProductList() {
     setValue("costCLP", product.costCLP.toString());
     setValue("priceARS", product.priceARS.toString());
     setValue("quantity", product.quantity.toString());
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = async (_id: string) => {
-    if (!API_URL) {
-      toast.error("API_URL no está definida");
-      return;
-    }
+  const confirmDelete = async (product: Product) => {
+    if (!API_URL || !product) return toast.error("No se pudo eliminar");
+
+    setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/compras/${_id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/compras/${product._id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Error al eliminar producto");
-      setProducts((prev) => prev.filter((p) => p._id !== _id));
+      setProducts(prev => prev.filter(p => p._id !== product._id));
       toast.success("Producto eliminado correctamente");
     } catch (err: any) {
       console.error(err);
       toast.error("Error al eliminar producto");
+    } finally {
+      setLoading(false);
     }
   };
 
   const totalCLP = products.reduce((acc, p) => acc + p.costCLP * p.quantity, 0);
-  const totalARS = totalCLP * CONVERSION_RATE;
+  const totalARS = totalCLP * conversionRate;
   const totalRevenueARS = products.reduce((acc, p) => acc + p.priceARS * p.quantity, 0);
   const totalProfit = totalRevenueARS - totalARS;
 
-  const sortedProducts = [...products].sort((a, b) => {
-    const profitA = (a.priceARS - a.costCLP * CONVERSION_RATE) * a.quantity;
-    const profitB = (b.priceARS - b.costCLP * CONVERSION_RATE) * b.quantity;
-    return sortByProfit ? profitB - profitA : 0;
-  });
+  const sortedProducts = useMemo(() => {
+    const sorted = [...products];
+    if (sortByProfit) {
+      sorted.sort((a, b) => {
+        const profitA = (a.priceARS - a.costCLP * conversionRate) * a.quantity;
+        const profitB = (b.priceARS - b.costCLP * conversionRate) * b.quantity;
+        return profitB - profitA;
+      });
+    }
+    return sorted;
+  }, [products, sortByProfit]);
 
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-6">
+
+
+<div>
+  <Label>Tipo de cambio CLP → ARS</Label>
+  <Input
+    type="number"
+    value={conversionRate}
+    step={0.01}
+    min={0}
+    onChange={(e) => setConversionRate(parseFloat(e.target.value))}
+    placeholder="Ej: 1.55"
+  />
+  <p className="text-xs text-muted-foreground mt-1">
+    Ajusta la tasa de conversión usada para calcular costos y ganancias en ARS.
+  </p>
+</div>
+
       {/* Formulario */}
       <Card>
-        <CardHeader>
-          <CardTitle>🛒 Agregar producto</CardTitle>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <CardTitle className="text-2xl font-bold flex items-center gap-2">
+            <Plus className="w-6 h-6 text-green-600" />
+            {editingId ? `Editando producto` : "Agregar producto"}
+          </CardTitle>
+          {editingId && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                reset();
+                setEditingId(null);
+              }}
+            >
+              Cancelar edición
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
             <div>
               <Label>Nombre del producto</Label>
               <Input {...register("name")} placeholder="Ej: Tabla Skate" />
-              {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+              {errors.name && (
+                <p className="text-red-500 text-sm">{errors.name.message}</p>
+              )}
             </div>
             <div>
               <Label>Precio en CLP (costo)</Label>
-              <Input type="number" {...register("costCLP")} placeholder="Ej: 20000" />
-              {errors.costCLP && <p className="text-red-500 text-sm">{errors.costCLP.message}</p>}
+              <Input type="number" {...register("costCLP")} placeholder="Ej: 20,000 CLP" />
+              {errors.costCLP && (
+                <p className="text-red-500 text-sm">{errors.costCLP.message}</p>
+              )}
             </div>
             <div>
               <Label>Precio en ARS (venta)</Label>
-              <Input type="number" {...register("priceARS")} placeholder="Ej: 50000" />
-              {errors.priceARS && <p className="text-red-500 text-sm">{errors.priceARS.message}</p>}
+              <Input type="number" {...register("priceARS")} placeholder="Ej: 50,000 ARS" />
+              {errors.priceARS && (
+                <p className="text-red-500 text-sm">{errors.priceARS.message}</p>
+              )}
             </div>
             <div>
               <Label>Cantidad</Label>
               <Input type="number" {...register("quantity")} placeholder="Ej: 2" />
-              {errors.quantity && <p className="text-red-500 text-sm">{errors.quantity.message}</p>}
+              {errors.quantity && (
+                <p className="text-red-500 text-sm">{errors.quantity.message}</p>
+              )}
             </div>
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isSubmitting || loading}>
               {editingId ? "Guardar cambios" : "Agregar producto"}
             </Button>
           </form>
@@ -199,7 +273,11 @@ export default function ProductList() {
       {/* Lista de productos */}
       <Card>
         <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
-          <CardTitle>📋 Lista de productos</CardTitle>
+          <CardTitle className="text-2xl font-bold flex items-center gap-2">
+            <Package className="w-6 h-6 text-blue-600" />
+            Lista de productos
+          </CardTitle>
+
           <Button
             variant={sortByProfit ? "secondary" : "outline"}
             size="sm"
@@ -210,74 +288,129 @@ export default function ProductList() {
           </Button>
         </CardHeader>
         <CardContent className="grid gap-4">
-          {sortedProducts.length === 0 && <p className="text-center text-gray-500">No hay productos agregados</p>}
+          {loading && <p className="text-center text-gray-500">Cargando...</p>}
+          {!loading && sortedProducts.length === 0 && (
+            <p className="text-center text-gray-500">No hay productos agregados</p>
+          )}
 
           {/* Tabla desktop */}
           <div className="hidden sm:block">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-muted/30">
-                  <th className="p-2 text-left">Producto</th>
-                  <th className="p-2 text-left">Costo (CLP)</th>
-                  <th className="p-2 text-left">Total (CLP)</th>
-                  <th className="p-2 text-left">Costo (ARS)</th>
-                  <th className="p-2 text-left">Venta (ARS)</th>
-                  <th className="p-2 text-left">Cantidad</th>
-                  <th className="p-2 text-left">Ganancia (ARS)</th>
-                  <th className="p-2"></th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableCaption>Lista de productos</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Producto</TableHead>
+                  <TableHead>Costo (CLP)</TableHead>
+                  <TableHead>Total (CLP)</TableHead>
+                  <TableHead>Costo (ARS)</TableHead>
+                  <TableHead>Venta (ARS)</TableHead>
+                  <TableHead>Cantidad</TableHead>
+                  <TableHead>Ganancia (ARS)</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
                 {sortedProducts.map((p) => {
                   const totalCLPItem = p.costCLP * p.quantity;
-                  const profit = (p.priceARS - p.costCLP * CONVERSION_RATE) * p.quantity;
+                  const profit = (p.priceARS - p.costCLP * conversionRate) * p.quantity;
+
                   return (
-                    <tr key={p._id} className="even:bg-muted/20">
-                      <td className="p-2">{p.name}</td>
-                      <td className="p-2">{p.costCLP.toLocaleString()} CLP</td>
-                      <td className="p-2">{totalCLPItem.toLocaleString()} CLP</td>
-                      <td className="p-2">{Math.round(p.costCLP * CONVERSION_RATE).toLocaleString()} ARS</td>
-                      <td className="p-2">{p.priceARS.toLocaleString()} ARS</td>
-                      <td className="p-2">{p.quantity}</td>
-                      <td className="p-2 text-green-600 font-semibold">{Math.round(profit).toLocaleString()} ARS</td>
-                      <td className="p-2 flex gap-2">
-                        <Button size="icon" variant="ghost" onClick={() => handleEdit(p)}>
+                    <TableRow key={p._id}>
+                      <TableCell className="font-medium">{p.name}</TableCell>
+                      <TableCell>{p.costCLP.toLocaleString()} CLP</TableCell>
+                      <TableCell>{totalCLPItem.toLocaleString()} CLP</TableCell>
+                      <TableCell>
+                        {Math.round(p.costCLP * conversionRate).toLocaleString()} ARS
+                      </TableCell>
+                      <TableCell>{p.priceARS.toLocaleString()} ARS</TableCell>
+                      <TableCell>{p.quantity}</TableCell>
+                      <TableCell
+                        className={`font-semibold ${
+                          profit < 0 ? "text-red-600" : "text-green-600"
+                        }`}
+                      >
+                        {Math.round(profit).toLocaleString()} ARS
+                      </TableCell>
+                      <TableCell className="flex gap-2">
+                        <Button size="icon" variant="ghost" title="Editar" onClick={() => handleEdit(p)}>
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={() => handleDelete(p._id)}>
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </td>
-                    </tr>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost" title="Eliminar">
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción no se puede deshacer. ¿Deseas eliminar {p.name}?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>CANCELAR</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => confirmDelete(p)}>
+                                ELIMINAR
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
 
-          {/* Cards mobile */}
+          {/* Cards mobile con acordeón */}
           <div className="sm:hidden flex flex-col gap-4">
             {sortedProducts.map((p) => {
               const totalCLPItem = p.costCLP * p.quantity;
-              const profit = (p.priceARS - p.costCLP * CONVERSION_RATE) * p.quantity;
+              const profit = (p.priceARS - p.costCLP * conversionRate) * p.quantity;
+
               return (
                 <Card key={p._id} className="p-4 bg-muted/10">
-                  <p className="font-semibold">{p.name}</p>
+                  <div className="flex justify-between items-center">
+                    <p className="font-semibold">{p.name}</p>
+                    <div className="flex gap-2">
+                      <Button size="icon" variant="ghost" title="Editar" onClick={() => handleEdit(p)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="icon" variant="ghost" title="Eliminar">
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta acción no se puede deshacer. ¿Deseas eliminar {p.name}?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>CANCELAR</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => confirmDelete(p)}>
+                              ELIMINAR
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
                     <div>Costo (CLP): {p.costCLP.toLocaleString()}</div>
                     <div>Total (CLP): {totalCLPItem.toLocaleString()}</div>
-                    <div>Costo (ARS): {Math.round(p.costCLP * CONVERSION_RATE).toLocaleString()}</div>
+                    <div>Costo (ARS): {Math.round(p.costCLP * conversionRate).toLocaleString()}</div>
                     <div>Venta (ARS): {p.priceARS.toLocaleString()}</div>
                     <div>Cantidad: {p.quantity}</div>
-                    <div className="text-green-600 font-semibold">Ganancia: {Math.round(profit).toLocaleString()}</div>
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    <Button size="icon" variant="ghost" onClick={() => handleEdit(p)}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleDelete(p._id)}>
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
+                    <div className={`${profit < 0 ? "text-red-600" : "text-green-600"} font-semibold`}>
+                      Ganancia: {Math.round(profit).toLocaleString()}
+                    </div>
                   </div>
                 </Card>
               );
@@ -289,25 +422,50 @@ export default function ProductList() {
       {/* Totales */}
       <Card>
         <CardHeader>
-          <CardTitle>📊 Resumen</CardTitle>
+          <CardTitle className="text-2xl font-bold flex items-center gap-2">
+            <DollarSign className="w-6 h-6 text-green-600" />
+            Resumen
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-            <div className="p-4 rounded-lg bg-muted/40">
-              <p className="text-sm text-gray-500">Total invertido (CLP)</p>
-              <p className="text-xl font-bold">{totalCLP.toLocaleString()} CLP</p>
-            </div>
-            <div className="p-4 rounded-lg bg-muted/40">
-              <p className="text-sm text-gray-500">Total invertido (ARS)</p>
-              <p className="text-xl font-bold">{Math.round(totalARS).toLocaleString()} ARS</p>
-            </div>
-            <div className="p-4 rounded-lg bg-green-100 border border-green-300">
-              <p className="text-sm text-green-700 font-medium">Ganancia total</p>
-              <p className="text-2xl font-extrabold text-green-700">{Math.round(totalProfit).toLocaleString()} ARS</p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <Card className="bg-muted/40 text-center">
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground">Total invertido (CLP)</p>
+                <p className="text-xl font-bold">{totalCLP.toLocaleString()} 🇨🇱</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-muted/40 text-center">
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground">Total invertido (ARS)</p>
+                <p className="text-xl font-bold">{Math.round(totalARS).toLocaleString()} 🇦🇷</p>
+              </CardContent>
+            </Card>
+
+            <Card className={`text-center ${totalProfit < 0 ? "bg-red-100 border-red-300 text-red-700" : "bg-green-100 border-green-300 text-green-700"}`}>
+              <CardContent className="p-4">
+                <p className="text-sm font-medium flex items-center justify-center gap-1">
+                  <TrendingUp className="w-4 h-4" />
+                  Ganancia total
+                </p>
+                <p className="text-2xl font-extrabold">{Math.round(totalProfit).toLocaleString()} ARS</p>
+              </CardContent>
+            </Card>
           </div>
         </CardContent>
       </Card>
+
+      {/* Botón flotante en mobile para agregar producto */}
+      {!editingId && (
+        <Button
+          size="icon"
+          className="fixed bottom-6 right-6 sm:hidden p-4 rounded-full shadow-lg"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        >
+          <Plus className="w-6 h-6 text-white" />
+        </Button>
+      )}
     </div>
   );
 }
