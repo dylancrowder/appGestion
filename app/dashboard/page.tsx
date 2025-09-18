@@ -453,41 +453,55 @@ export default function ProductList() {
       </Card>
 
       {/* Totales */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold flex items-center gap-2">
-            <DollarSign className="w-6 h-6 text-green-600" />
-            Resumen
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <Card className="bg-muted/40 text-center">
-              <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">Total invertido (CLP)</p>
-                <p className="text-xl font-bold">{totalCLP.toLocaleString()} 🇨🇱</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-muted/40 text-center">
-              <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">Total invertido (ARS)</p>
-                <p className="text-xl font-bold">{Math.round(totalARS).toLocaleString()} 🇦🇷</p>
-              </CardContent>
-            </Card>
-
-            <Card className={`text-center ${totalProfit < 0 ? "bg-red-100 border-red-300 text-red-700" : "bg-green-100 border-green-300 text-green-700"}`}>
-              <CardContent className="p-4">
-                <p className="text-sm font-medium flex items-center justify-center gap-1">
-                  <TrendingUp className="w-4 h-4" />
-                  Ganancia total
-                </p>
-                <p className="text-2xl font-extrabold">{Math.round(totalProfit).toLocaleString()} ARS</p>
-              </CardContent>
-            </Card>
-          </div>
+   <Card>
+  <CardHeader>
+    <CardTitle className="text-2xl font-bold">
+      Resumen
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      
+      <Card className="bg-muted/40 text-center">
+        <CardContent className="p-4">
+          <p className="text-sm text-gray-700 flex items-center justify-center gap-1">
+           
+            Total invertido 🇨🇱
+          </p>
+          <p className="text-xl font-bold text-gray-900">
+            ${totalCLP.toLocaleString("es-CL")}
+          </p>
         </CardContent>
       </Card>
+
+      <Card className="bg-muted/40 text-center">
+        <CardContent className="p-4">
+          <p className="text-sm text-gray-700 flex items-center justify-center gap-1">
+        
+            Total invertido 🇦🇷
+          </p>
+          <p className="text-xl font-bold text-gray-900">
+            ${Math.round(totalARS).toLocaleString("es-AR")}
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className={`text-center ${totalProfit < 0 ? "bg-red-100 border-red-300 text-red-700" : "bg-green-100 border-green-300 text-green-700"}`}>
+        <CardContent className="p-4">
+          <p className="text-sm font-medium flex items-center justify-center gap-1">
+            <TrendingUp className="w-4 h-4" />
+            Ganancia total
+          </p>
+          <p className="text-2xl font-extrabold">
+            ${Math.round(totalProfit).toLocaleString("es-AR")}
+          </p>
+        </CardContent>
+      </Card>
+
+    </div>
+  </CardContent>
+</Card>
+
 
       {/* Botón flotante en mobile para agregar producto */}
       {!editingId && (
