@@ -50,7 +50,10 @@ function Button({
   return (
     <Comp
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(
+        buttonVariants({ variant, size, className }),
+        "cursor-pointer select-none active:scale-95 touch-manipulation" // <-- efecto sutil al click
+      )}
       {...props}
     />
   )

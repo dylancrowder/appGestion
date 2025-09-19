@@ -27,6 +27,11 @@ const Welcome = () => {
         </Link>
       </div>
  
+
+
+
+
+
     </div>
   );
 };
