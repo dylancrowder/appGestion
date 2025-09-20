@@ -32,13 +32,14 @@ export default function ProfitChecker() {
   const [costCLP, setCostCLP] = useState<number | "">("");
   const [priceARS, setPriceARS] = useState<number | "">("");
   const [quantity, setQuantity] = useState(1);
-  const [conversionRate, setConversionRate] = useState(1.55);
+  const [conversionRate, setConversionRate] = useState(1.66);
   const [products, setProducts] = useState<Product[]>([]);
 
   const parsedCost = typeof costCLP === "number" ? costCLP : 0;
   const parsedPrice = typeof priceARS === "number" ? priceARS : 0;
 
-  const profit = (parsedPrice - parsedCost * conversionRate) * quantity;
+  const convertedCostARS = parsedCost * conversionRate;
+  const profit = (parsedPrice - convertedCostARS) * quantity;
 
   const handleAdd = () => {
     if (!name || profit <= 0) return;
@@ -144,17 +145,27 @@ export default function ProfitChecker() {
               />
             </div>
 
-            {/* Resultado */}
-            <div
-              className={`p-4 rounded-lg font-bold text-lg ${
-                profit > 0
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
-              }`}
-            >
-              Ganancia estimada: $
-              {Math.round(profit).toLocaleString("es-AR")}
-            </div>
+            {/* Costo invertido */}
+            {parsedCost > 0 && (
+              <div className="p-4 rounded-lg font-bold text-lg bg-yellow-100 text-yellow-700">
+                Costo invertido: $
+                {Math.round(convertedCostARS).toLocaleString("es-AR")} ARS
+              </div>
+            )}
+
+            {/* Ganancia estimada */}
+            {parsedPrice > 0 && (
+              <div
+                className={`p-4 rounded-lg font-bold text-lg ${
+                  profit > 0
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                Ganancia estimada: $
+                {Math.round(profit).toLocaleString("es-AR")}
+              </div>
+            )}
 
             <Button
               onClick={handleAdd}

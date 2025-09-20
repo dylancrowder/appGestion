@@ -7,19 +7,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Transaction {
   id: number;
   type: "ingreso" | "gasto";
   description: string;
-  amount: number; // monto en ARS
-  originalAmount: number; // monto en la moneda original
+  amount: number; // en ARS
+  originalAmount: number;
   currency: "ARS" | "CLP";
   date: string;
 }
 
 const CONVERSION_RATES: Record<string, number> = {
-  CLP: 1.53, // 1 CLP = 1.53 ARS (ejemplo)
+  CLP: 1.53,
   ARS: 1,
 };
 
@@ -33,7 +40,9 @@ export default function MoneyManager() {
     currency: "ARS",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -54,11 +63,13 @@ export default function MoneyManager() {
     };
 
     if (editingId) {
-      setTransactions(transactions.map(t => (t.id === editingId ? newTransaction : t)));
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === editingId ? newTransaction : t))
+      );
       setEditingId(null);
       toast({ title: "✅ Transacción editada correctamente" });
     } else {
-      setTransactions([...transactions, newTransaction]);
+      setTransactions((prev) => [...prev, newTransaction]);
       toast({ title: "💰 Transacción agregada" });
     }
 
@@ -76,12 +87,18 @@ export default function MoneyManager() {
   };
 
   const handleDelete = (id: number) => {
-    setTransactions(transactions.filter(t => t.id !== id));
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
     toast({ title: "🗑️ Transacción eliminada" });
   };
 
-  const totalIncome = transactions.filter(t => t.type === "ingreso").reduce((acc, t) => acc + t.amount, 0);
-  const totalExpenses = transactions.filter(t => t.type === "gasto").reduce((acc, t) => acc + t.amount, 0);
+  const totalIncome = transactions
+    .filter((t) => t.type === "ingreso")
+    .reduce((acc, t) => acc + t.amount, 0);
+
+  const totalExpenses = transactions
+    .filter((t) => t.type === "gasto")
+    .reduce((acc, t) => acc + t.amount, 0);
+
   const balance = totalIncome - totalExpenses;
 
   return (
@@ -89,23 +106,30 @@ export default function MoneyManager() {
       {/* Formulario */}
       <Card>
         <CardHeader>
-          <CardTitle>💵 Registrar transacción</CardTitle>
+          <CardTitle className="text-xl font-bold">
+            💵 Registrar transacción
+          </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
-          <div>
+          {/* Tipo */}
+          <div className="grid gap-2">
             <Label>Tipo</Label>
-            <select
-              name="type"
+            <Select
               value={form.type}
-              onChange={handleChange}
-              className="w-full border rounded p-2"
+              onValueChange={(val) => setForm({ ...form, type: val })}
             >
-              <option value="ingreso">Ingreso</option>
-              <option value="gasto">Gasto</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ingreso">Ingreso</SelectItem>
+                <SelectItem value="gasto">Gasto</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <div>
+          {/* Descripción */}
+          <div className="grid gap-2">
             <Label>Descripción</Label>
             <Input
               name="description"
@@ -115,7 +139,8 @@ export default function MoneyManager() {
             />
           </div>
 
-          <div>
+          {/* Monto */}
+          <div className="grid gap-2">
             <Label>Monto</Label>
             <Input
               type="number"
@@ -126,17 +151,21 @@ export default function MoneyManager() {
             />
           </div>
 
-          <div>
+          {/* Moneda */}
+          <div className="grid gap-2">
             <Label>Moneda</Label>
-            <select
-              name="currency"
+            <Select
               value={form.currency}
-              onChange={handleChange}
-              className="w-full border rounded p-2"
+              onValueChange={(val) => setForm({ ...form, currency: val })}
             >
-              <option value="ARS">ARS</option>
-              <option value="CLP">CLP</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona moneda" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ARS">ARS</SelectItem>
+                <SelectItem value="CLP">CLP</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <Button onClick={handleAdd} className="w-full">
@@ -145,17 +174,21 @@ export default function MoneyManager() {
         </CardContent>
       </Card>
 
-      {/* Lista de transacciones */}
+      {/* Lista */}
       <Card>
         <CardHeader>
           <CardTitle>📋 Transacciones</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
-          {transactions.length === 0 && <p className="text-center text-gray-500">No hay transacciones</p>}
+          {transactions.length === 0 && (
+            <p className="text-center text-muted-foreground">
+              No hay transacciones
+            </p>
+          )}
 
-          {/* Tabla desktop */}
+          {/* Desktop */}
           <div className="hidden sm:block">
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="bg-muted/30">
                   <th className="p-2 text-left">Tipo</th>
@@ -166,20 +199,37 @@ export default function MoneyManager() {
                 </tr>
               </thead>
               <tbody>
-                {transactions.map(t => (
+                {transactions.map((t) => (
                   <tr key={t.id} className="even:bg-muted/20">
-                    <td className={`p-2 font-semibold ${t.type === "ingreso" ? "text-green-600" : "text-red-600"}`}>
+                    <td
+                      className={`p-2 font-semibold ${
+                        t.type === "ingreso"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
                       {t.type === "ingreso" ? "Ingreso" : "Gasto"}
                     </td>
                     <td className="p-2">{t.description}</td>
-                    <td className="p-2">{t.originalAmount.toLocaleString()} {t.currency} ({t.amount.toLocaleString()} ARS)</td>
+                    <td className="p-2">
+                      {t.originalAmount.toLocaleString()} {t.currency} (
+                      {t.amount.toLocaleString()} ARS)
+                    </td>
                     <td className="p-2">{t.date}</td>
                     <td className="p-2 flex gap-2">
-                      <Button size="icon" variant="ghost" onClick={() => handleEdit(t)}>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => handleEdit(t)}
+                      >
                         <Pencil className="w-4 h-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => handleDelete(t.id)}>
-                        <Trash2 className="w-4 h-4 text-red-500" />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        onClick={() => handleDelete(t.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </td>
                   </tr>
@@ -188,27 +238,50 @@ export default function MoneyManager() {
             </table>
           </div>
 
-          {/* Cards mobile */}
+          {/* Mobile */}
           <div className="sm:hidden flex flex-col gap-4">
-            {transactions.map(t => (
+            {transactions.map((t) => (
               <Card key={t.id} className="p-4 bg-muted/10">
                 <div className="flex justify-between items-center mb-2">
-                  <span className={`font-semibold ${t.type === "ingreso" ? "text-green-600" : "text-red-600"}`}>
+                  <span
+                    className={`font-semibold ${
+                      t.type === "ingreso"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
                     {t.type === "ingreso" ? "Ingreso" : "Gasto"}
                   </span>
-                  <span className="text-sm text-gray-500">{t.date}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {t.date}
+                  </span>
                 </div>
-                <p className="text-lg font-medium mb-2">{t.description}</p>
+                <p className="text-sm mb-2">{t.description}</p>
                 <div className="flex justify-between items-center">
-                  <span className={`${t.type === "ingreso" ? "text-green-600" : "text-red-600"} font-bold`}>
-                    {t.originalAmount.toLocaleString()} {t.currency} ({t.amount.toLocaleString()} ARS)
+                  <span
+                    className={`${
+                      t.type === "ingreso"
+                        ? "text-green-700"
+                        : "text-red-700"
+                    } font-bold`}
+                  >
+                    {t.originalAmount.toLocaleString()} {t.currency} (
+                    {t.amount.toLocaleString()} ARS)
                   </span>
                   <div className="flex gap-2">
-                    <Button size="icon" variant="ghost" onClick={() => handleEdit(t)}>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => handleEdit(t)}
+                    >
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleDelete(t.id)}>
-                      <Trash2 className="w-4 h-4 text-red-500" />
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      onClick={() => handleDelete(t.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
@@ -224,20 +297,38 @@ export default function MoneyManager() {
           <CardTitle>📊 Resumen</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-          <div className="p-4 rounded-lg bg-green-100 border border-green-300">
-            <p className="text-sm text-green-700 font-medium">Ingresos totales</p>
-            <p className="text-2xl font-bold text-green-700">{totalIncome.toLocaleString()} ARS</p>
-          </div>
-          <div className="p-4 rounded-lg bg-red-100 border border-red-300">
-            <p className="text-sm text-red-700 font-medium">Gastos totales</p>
-            <p className="text-2xl font-bold text-red-700">{totalExpenses.toLocaleString()} ARS</p>
-          </div>
-          <div className={`p-4 rounded-lg ${balance >= 0 ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}>
+          <Card className="p-4 border border-green-300 bg-green-50">
+            <p className="text-sm text-green-700 font-medium">
+              Ingresos totales
+            </p>
+            <p className="text-xl font-bold text-green-700">
+              {totalIncome.toLocaleString()} ARS
+            </p>
+          </Card>
+          <Card className="p-4 border border-red-300 bg-red-50">
+            <p className="text-sm text-red-700 font-medium">
+              Gastos totales
+            </p>
+            <p className="text-xl font-bold text-red-700">
+              {totalExpenses.toLocaleString()} ARS
+            </p>
+          </Card>
+          <Card
+            className={`p-4 ${
+              balance >= 0
+                ? "border border-green-200 bg-green-50"
+                : "border border-red-200 bg-red-50"
+            }`}
+          >
             <p className="text-sm font-medium">Balance</p>
-            <p className={`text-2xl font-bold ${balance >= 0 ? "text-green-700" : "text-red-700"}`}>
+            <p
+              className={`text-xl font-bold ${
+                balance >= 0 ? "text-green-700" : "text-red-700"
+              }`}
+            >
               {balance.toLocaleString()} ARS
             </p>
-          </div>
+          </Card>
         </CardContent>
       </Card>
     </div>
