@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,14 +16,16 @@ import {
 } from "@/components/ui/table";
 import ReactCountryFlag from "react-country-flag";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 interface Product {
-  id: string;
+  _id: string;
   name: string;
   costCLP: number;
   priceARS: number;
   quantity: number;
   profit: number;
-  url?: string; // opcional
+  url?: string;
 }
 
 export default function ProfitChecker() {
@@ -41,27 +43,66 @@ export default function ProfitChecker() {
   const convertedCostARS = parsedCost * conversionRate;
   const profit = (parsedPrice - convertedCostARS) * quantity;
 
-  const handleAdd = () => {
+  // Cargar productos desde backend
+  useEffect(() => {
+    fetch(`${API_URL}/analisis`)
+      .then((res) => res.json())
+      .then((data) => {
+        const mapped: Product[] = data.map((p: any) => ({
+          ...p,
+          profit: (p.priceARS - p.costCLP * conversionRate) * p.quantity,
+        }));
+        setProducts(mapped);
+      })
+      .catch(console.error);
+  }, [conversionRate]);
+
+  const handleAdd = async () => {
     if (!name || profit <= 0) return;
 
-    const newProduct: Product = {
-      id: crypto.randomUUID(),
-      name,
-      costCLP: parsedCost,
-      priceARS: parsedPrice,
-      quantity,
-      profit,
-      url: url.trim() || undefined,
+    const body = {
+      title: name,
+      description: url,
+      date: new Date().toISOString(),
+      results: [
+        {
+          parameter: "Costo CLP",
+          value: parsedCost,
+          unit: "CLP",
+        },
+        {
+          parameter: "Precio ARS",
+          value: parsedPrice,
+          unit: "ARS",
+        },
+        {
+          parameter: "Cantidad",
+          value: quantity,
+        },
+      ],
     };
 
-    setProducts((prev) => [...prev, newProduct]);
+    try {
+      const res = await fetch(`${API_URL}/analisis/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const newProduct = await res.json();
+      setProducts((prev) => [
+        ...prev,
+        { ...newProduct, profit: profit },
+      ]);
 
-    // reset form
-    setName("");
-    setUrl("");
-    setCostCLP("");
-    setPriceARS("");
-    setQuantity(1);
+      // reset form
+      setName("");
+      setUrl("");
+      setCostCLP("");
+      setPriceARS("");
+      setQuantity(1);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -204,7 +245,7 @@ export default function ProfitChecker() {
               </TableHeader>
               <TableBody>
                 {products.map((p) => (
-                  <TableRow key={p.id}>
+                  <TableRow key={p._id}>
                     <TableCell>{p.name}</TableCell>
                     <TableCell>${p.costCLP.toLocaleString()}</TableCell>
                     <TableCell>${p.priceARS.toLocaleString()}</TableCell>

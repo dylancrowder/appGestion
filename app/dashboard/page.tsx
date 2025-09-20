@@ -85,7 +85,7 @@ export default function ProductList() {
       setProducts(data);
     } catch (err: any) {
       toast.error("Error al cargar productos");
-      console.error(err);Usuario
+      console.error(err);
       
     } finally { setLoading(false); }
   };
