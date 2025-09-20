@@ -383,15 +383,15 @@ export default function ProductList() {
     return (
       <Card key={p._id} className="p-4 bg-muted/20 rounded-lg shadow-sm">
         {/* Header */}
-        <div className="flex justify-between items-center mb-3 border-b border-muted/40 pb-2">
+        <div className="flex justify-between items-center  border-b border-muted/40 ">
           <p className="font-semibold text-lg">{p.name}</p>
           <div className="flex gap-2">
-            <Button size="icon" variant="ghost" title="Editar" onClick={() => handleEdit(p)}>
+            <Button size="icon" variant="ghost" title="Editar" onClick={() => handleEdit(p)} className="border">
               <Pencil className="w-5 h-5" />
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="icon" variant="ghost" title="Eliminar">
+                <Button size="icon" variant="ghost" title="Eliminar" className="border">
                   <Trash2 className="w-5 h-5 text-red-500" />
                 </Button>
               </AlertDialogTrigger>
@@ -479,10 +479,8 @@ export default function ProductList() {
           </div>
         </div>
 
-        <Separator className="my-2" />
-
         {/* Ganancia */}
-        <div className="flex justify-between items-center mt-1">
+        <div className="flex justify-between items-center ">
           <span className="font-semibold text-lg">
             Ganancia
             <span className="ml-1 inline-block">
