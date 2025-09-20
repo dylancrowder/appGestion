@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ChevronDown, ShoppingCart, PackagePlus, User, Settings, LogOut, Sun } from "lucide-react";
+import { ChevronDown, Package, Search, Wallet, User, Settings, LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -23,15 +22,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu";
 
 export const items = [
-  { title: "Compras", url: "/dashboard/", icon: ShoppingCart },
-  { title: "Gastos", url: "/dashboard/gestion", icon: PackagePlus },
+  { title: "Inventario", url: "/dashboard/", icon: Package },
+  { title: "Análisis de productos", url: "/dashboard/check", icon: Search },
+  { title: "Finanzas", url: "/dashboard/gestion", icon: Wallet },
 ];
 
 export function AppSidebar() {
-  
-
-
-
   return (
     <Sidebar>
       {/* Navbar usuario arriba */}
@@ -39,43 +35,42 @@ export function AppSidebar() {
         <div className="flex items-center justify-between">
           <Avatar>
             <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback>CN</AvatarFallback>
+            <AvatarFallback>DC</AvatarFallback>
           </Avatar>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="ml-auto flex items-center gap-2 text-sm font-medium hover:text-gray-700 transition">
-                Usuario
+                Dylan
                 <ChevronDown className="w-4 h-4 transition-transform duration-200 data-[state=open]:rotate-180" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="bottom" align="start" className="w-56">
               <DropdownMenuItem className="flex items-center gap-2">
-                <User className="w-4 h-4" /> <span>Account</span>
+                <User className="w-4 h-4" /> <span>Mi perfil</span>
               </DropdownMenuItem>
               <DropdownMenuItem className="flex items-center gap-2">
-                <Settings className="w-4 h-4" /> <span>Settings</span>
+                <Settings className="w-4 h-4" /> <span>Configuración</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="flex items-center gap-2 text-red-600">
-                <LogOut className="w-4 h-4" /> <span>Sign out</span>
+                <LogOut className="w-4 h-4" /> <span>Cerrar sesión</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-
       </div>
 
       {/* Contenido principal */}
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
+          <SidebarGroupLabel>Navegación</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <a className="flex items-center gap-2" href={item.url}>
-                      <item.icon />
+                      <item.icon className="w-5 h-5" />
                       <span>{item.title}</span>
                     </a>
                   </SidebarMenuButton>
@@ -88,7 +83,7 @@ export function AppSidebar() {
 
       {/* Footer opcional */}
       <SidebarFooter className="p-2 text-center text-xs text-gray-400">
-        © 2025 Tu App
+        © 2025 App Gestión
       </SidebarFooter>
     </Sidebar>
   );
