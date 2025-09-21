@@ -377,17 +377,24 @@ export default function ProductList() {
 
 
           {/* Cards mobile */}
-      <div className="sm:hidden flex flex-col gap-4">
+ {/* Cards mobile */}
+<div className="sm:hidden flex flex-col gap-4">
   {sortedProducts.map((p) => {
     const totalCLPItem = p.costCLP * p.quantity;
     const profit = (p.priceARS - p.costCLP * conversionRate) * p.quantity;
     return (
       <Card key={p._id} className="p-4 bg-muted/20 rounded-lg shadow-sm">
         {/* Header */}
-        <div className="flex justify-between items-center  border-b border-muted/40 ">
+        <div className="flex justify-between items-center border-b border-muted/40 pb-2 mb-2">
           <p className="font-semibold text-lg">{p.name}</p>
           <div className="flex gap-2">
-            <Button size="icon" variant="ghost" title="Editar" onClick={() => handleEdit(p)} className="border">
+            <Button
+              size="icon"
+              variant="ghost"
+              title="Editar"
+              onClick={() => handleEdit(p)}
+              className="border"
+            >
               <Pencil className="w-5 h-5" />
             </Button>
             <AlertDialog>
@@ -400,12 +407,15 @@ export default function ProductList() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Esta acción no se puede deshacer. ¿Deseas eliminar <strong>{p.name}</strong>?
+                    Esta acción no se puede deshacer. ¿Deseas eliminar{" "}
+                    <strong>{p.name}</strong>?
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>CANCELAR</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => confirmDelete(p)}>ELIMINAR</AlertDialogAction>
+                  <AlertDialogAction onClick={() => confirmDelete(p)}>
+                    ELIMINAR
+                  </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -413,98 +423,56 @@ export default function ProductList() {
         </div>
 
         {/* Detalles */}
-        <div className="flex flex-col gap-2 text-sm">
-          <div className="flex justify-between items-center p-2 rounded bg-muted/10">
-            <span className="font-medium text-muted-foreground">
-              Costo
-              <span className="ml-1 inline-block">
-                <ReactCountryFlag
-                  countryCode="CL"
-                  svg
-                  style={{ width: 16, height: 16, objectFit: "cover", borderRadius: "50%" }}
-                  title="Chile"
-                />
+        <div className="flex flex-col text-sm divide-y divide-muted/40 rounded-lg overflow-hidden">
+          {[
+            { label: "Costo", value: `$${p.costCLP.toLocaleString()}`, flag: "CL" },
+            { label: "Total", value: `$${totalCLPItem.toLocaleString()}`, flag: "CL" },
+            { label: "Costo", value: `$${Math.round(p.costCLP * conversionRate).toLocaleString()}`, flag: "AR" },
+            { label: "Venta", value: `$${p.priceARS.toLocaleString()}`, flag: "AR" },
+            { label: "Cantidad", value: p.quantity.toString(), flag: null },
+          ].map((item, i) => (
+            <div key={i} className="flex justify-between items-center px-2 py-2 bg-white/50">
+              <span className="font-medium text-muted-foreground flex items-center gap-2">
+                {item.label}
+                {item.flag && (
+                  <ReactCountryFlag
+                    countryCode={item.flag}
+                    svg
+                    className="align-middle"
+                    style={{ width: 16, height: 16, borderRadius: "50%" }}
+                  />
+                )}
               </span>
-            </span>
-            <span>${p.costCLP.toLocaleString()}</span>
-          </div>
-
-          <div className="flex justify-between items-center p-2 rounded bg-muted/10">
-            <span className="font-medium text-muted-foreground">
-              Total
-              <span className="ml-1 inline-block">
-                <ReactCountryFlag
-                  countryCode="CL"
-                  svg
-                  style={{ width: 16, height: 16, objectFit: "cover", borderRadius: "50%" }}
-                  title="Chile"
-                />
-              </span>
-            </span>
-            <span>${totalCLPItem.toLocaleString()}</span>
-          </div>
-
-          <div className="flex justify-between items-center p-2 rounded bg-muted/10">
-            <span className="font-medium text-muted-foreground">
-              Costo
-              <span className="ml-1 inline-block">
-                <ReactCountryFlag
-                  countryCode="AR"
-                  svg
-                  style={{ width: 16, height: 16, objectFit: "cover", borderRadius: "50%" }}
-                  title="Argentina"
-                />
-              </span>
-            </span>
-            <span>${Math.round(p.costCLP * conversionRate).toLocaleString()}</span>
-          </div>
-
-          <div className="flex justify-between items-center p-2 rounded bg-muted/10">
-            <span className="font-medium text-muted-foreground">
-              Venta
-              <span className="ml-1 inline-block">
-                <ReactCountryFlag
-                  countryCode="AR"
-                  svg
-                  style={{ width: 16, height: 16, objectFit: "cover", borderRadius: "50%" }}
-                  title="Argentina"
-                />
-              </span>
-            </span>
-            <span>${p.priceARS.toLocaleString()}</span>
-          </div>
-
-          <div className="flex justify-between items-center p-2 rounded bg-muted/10">
-            <span className="font-medium text-muted-foreground">Cantidad</span>
-            <span>{p.quantity}</span>
-          </div>
+              <span className="font-medium">{item.value}</span>
+            </div>
+          ))}
         </div>
 
         {/* Ganancia */}
-        <div className="flex justify-between items-center ">
-          <span className="font-semibold text-lg">
+        <div className="flex justify-between items-center border-t border-muted/40 mt-2 pt-2">
+          <span className="font-semibold text-lg flex items-center gap-2">
             Ganancia
-            <span className="ml-1 inline-block">
-              <ReactCountryFlag
-                countryCode="AR"
-                svg
-                style={{ width: 16, height: 16, objectFit: "cover", borderRadius: "50%" }}
-                title="Argentina"
-              />
-            </span>
+            <ReactCountryFlag
+              countryCode="AR"
+              svg
+              className="align-middle"
+              style={{ width: 16, height: 16, borderRadius: "50%" }}
+            />
           </span>
-          <span className={`font-bold text-lg ${profit < 0 ? "text-red-600" : "text-green-600"}`}>
+          <span
+            className={`font-bold text-lg ${
+              profit < 0 ? "text-red-600" : "text-green-600"
+            }`}
+          >
             ${Math.round(profit).toLocaleString()}
           </span>
         </div>
       </Card>
     );
   })}
-
-
-  {/* ----------- */}
 </div>
 
+{/* dddddddddddddddddddd */}
         </CardContent>
       </Card>
 
