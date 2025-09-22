@@ -37,8 +37,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Separator } from "@radix-ui/react-separator";
+
 import ReactCountryFlag from "react-country-flag";
+import ConversionRateInput from "@/components/ConvercionRateInput";
+import { useConversionRate } from "@/hooks/use-CoversionRate";
 
 // --- Types ---
 interface Product {
@@ -64,7 +66,14 @@ export default function ProductList() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sortByProfit, setSortByProfit] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [conversionRate, setConversionRate] = useState(1.55);
+
+ const {
+    conversionRate,
+    setConversionRate,
+    fetchConversionRate,
+    saveConversionRate,
+  } = useConversionRate();
+
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<ProductFormData>({
@@ -90,6 +99,8 @@ export default function ProductList() {
     } finally { setLoading(false); }
   };
 
+
+  // enviar el producto
   const onSubmit = async (form: ProductFormData) => {
     if (!API_URL) return toast.error("API_URL no está definida");
 
@@ -98,6 +109,7 @@ export default function ProductList() {
       costCLP: parseFloat(form.costCLP),
       priceARS: parseFloat(form.priceARS),
       quantity: parseInt(form.quantity) || 1,
+      currentExchangeRate: conversionRate ,
     };
 
     setLoading(true);
@@ -170,21 +182,9 @@ export default function ProductList() {
     <div className="max-w-5xl mx-auto p-6 space-y-6">
 
       {/* Tasa de conversión */}
-      <div>
-        <Label>Tasa de cambio CLP → ARS</Label>
-        <Input
-          type="number"
-          value={conversionRate}
-          step={0.01}
-          min={0}
-          onChange={(e) => setConversionRate(parseFloat(e.target.value))}
-          placeholder="Ej: 1.55"
-        />
-        <p className="text-xs text-muted-foreground mt-1">
-          Ajusta la tasa de conversión usada para calcular costos y ganancias en ARS.
-        </p>
-      </div>
+    
 
+     <ConversionRateInput/>
       {/* Formulario */}
       <Card>
         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
