@@ -72,7 +72,7 @@ export default function ProfitChecker() {
   }, [conversionRate]);
 
   const handleAdd = async () => {
-    if (!name || profit <= 0) return;
+    if (!costCLP || !priceARS || profit <= 0) return;
 
     const body = {
       title: name,
@@ -110,7 +110,7 @@ export default function ProfitChecker() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
-       <ConversionRateInput className="mb-4" />
+      <ConversionRateInput className="mb-4" />
       {/* Formulario */}
       <Card>
         <CardHeader>
@@ -120,60 +120,88 @@ export default function ProfitChecker() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4">
-            <div>
-              <Label>Nombre del producto</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
+          <div className="grid gap-6">
+            {/* 👉 Sección principal */}
+            <div className="space-y-4 p-4 rounded-lg border bg-gray-50">
+              <h3 className="text-lg font-semibold">Precios principales</h3>
+
+              <div>
+                <Label>
+                  Costo en CLP{" "}
+                  <ReactCountryFlag
+                    countryCode="CL"
+                    svg
+                    style={{ width: 16, height: 16 }}
+                  />
+                </Label>
+                <Input
+                  type="number"
+                  value={costCLP}
+                  onChange={(e) =>
+                    setCostCLP(e.target.value ? parseFloat(e.target.value) : "")
+                  }
+                />
+              </div>
+
+              <div>
+                <Label>
+                  Precio de venta ARS{" "}
+                  <ReactCountryFlag
+                    countryCode="AR"
+                    svg
+                    style={{ width: 16, height: 16 }}
+                  />
+                </Label>
+                <Input
+                  type="number"
+                  value={priceARS}
+                  onChange={(e) =>
+                    setPriceARS(e.target.value ? parseFloat(e.target.value) : "")
+                  }
+                />
+              </div>
             </div>
-            <div>
-              <Label>Link del producto (opcional)</Label>
-              <Input
-                type="url"
-                placeholder="https://..."
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>
-                Costo en CLP{" "}
-                <ReactCountryFlag countryCode="CL" svg style={{ width: 16, height: 16 }} />
-              </Label>
-              <Input
-                type="number"
-                value={costCLP}
-                onChange={(e) =>
-                  setCostCLP(e.target.value ? parseFloat(e.target.value) : "")
-                }
-              />
-            </div>
-            <div>
-              <Label>
-                Precio de venta ARS{" "}
-                <ReactCountryFlag countryCode="AR" svg style={{ width: 16, height: 16 }} />
-              </Label>
-              <Input
-                type="number"
-                value={priceARS}
-                onChange={(e) =>
-                  setPriceARS(e.target.value ? parseFloat(e.target.value) : "")
-                }
-              />
-            </div>
-            <div>
-              <Label>Cantidad</Label>
-              <Input
-                type="number"
-                value={quantity}
-                min={1}
-                onChange={(e) => setQuantity(parseInt(e.target.value))}
-              />
+
+            {/* 👉 Sección opcional */}
+            <div className="space-y-4 p-4 rounded-lg border">
+              <h3 className="text-lg font-semibold">
+                Información adicional (opcional)
+              </h3>
+
+              <div>
+                <Label>Nombre del producto</Label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label>Link del producto</Label>
+                <Input
+                  type="url"
+                  placeholder="https://..."
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label>Cantidad</Label>
+                <Input
+                  type="number"
+                  value={quantity}
+                  min={1}
+                  onChange={(e) => setQuantity(parseInt(e.target.value))}
+                />
+              </div>
             </div>
 
             {/* Costo invertido */}
             {parsedCost > 0 && (
               <div className="p-4 rounded-lg font-bold text-lg bg-yellow-100 text-yellow-700">
-                Costo invertido: ${Math.round(convertedCostARS).toLocaleString("es-AR")} ARS
+                Costo invertido: $
+                {Math.round(convertedCostARS).toLocaleString("es-AR")} ARS
               </div>
             )}
 
@@ -192,7 +220,7 @@ export default function ProfitChecker() {
 
             <Button
               onClick={handleAdd}
-              disabled={!name || profit <= 0}
+              disabled={!costCLP || !priceARS || profit <= 0}
               className="w-full"
             >
               <Plus className="w-5 h-5 mr-2" />

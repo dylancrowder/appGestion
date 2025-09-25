@@ -173,7 +173,11 @@ const fetchProducts = async () => {
     if (!API_URL || !product) return toast.error("No se pudo eliminar");
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/inventory/${product._id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/inventory/${product._id}`, { method: "DELETE",     headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`}, }
+        
+      );
       if (!res.ok) throw new Error("Error al eliminar producto");
       setProducts(prev => prev.filter(p => p._id !== product._id));
       toast.success("Producto eliminado correctamente");

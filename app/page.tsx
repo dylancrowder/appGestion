@@ -27,11 +27,6 @@ const Welcome = () => {
           </Button>
         </Link>
       </div>
- 
- <ConversionRateInput className="mb-4" />
-
-
-
 
     </div>
   );
