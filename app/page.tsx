@@ -1,5 +1,6 @@
 "use client";
 
+import ConversionRateInput from "@/components/ConvercionRateInput";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React from "react";
@@ -27,7 +28,7 @@ const Welcome = () => {
         </Link>
       </div>
  
-
+ <ConversionRateInput className="mb-4" />
 
 
 

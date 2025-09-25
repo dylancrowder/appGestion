@@ -15,10 +15,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import ReactCountryFlag from "react-country-flag";
+import { useConversionRate } from "@/hooks/use-CoversionRate";
+import ConversionRateInput from "@/components/ConvercionRateInput";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-interface Product {
+interface ProductListDTO {
   _id: string;
   name: string;
   costCLP: number;
@@ -34,23 +36,35 @@ export default function ProfitChecker() {
   const [costCLP, setCostCLP] = useState<number | "">("");
   const [priceARS, setPriceARS] = useState<number | "">("");
   const [quantity, setQuantity] = useState(1);
-  const [conversionRate, setConversionRate] = useState(1.66);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductListDTO[]>([]);
+
+  // 👉 usamos el hook global de tasa
+  const {
+    conversionRate,
+    setConversionRate,
+    fetchConversionRate,
+    saveConversionRate,
+  } = useConversionRate();
 
   const parsedCost = typeof costCLP === "number" ? costCLP : 0;
   const parsedPrice = typeof priceARS === "number" ? priceARS : 0;
 
-  const convertedCostARS = parsedCost * conversionRate;
+  const convertedCostARS = parsedCost * (conversionRate ?? 1);
   const profit = (parsedPrice - convertedCostARS) * quantity;
+
+  // Cargar tasa desde DB al montar
+  useEffect(() => {
+    fetchConversionRate();
+  }, [fetchConversionRate]);
 
   // Cargar productos desde backend
   useEffect(() => {
     fetch(`${API_URL}/analisis`)
       .then((res) => res.json())
       .then((data) => {
-        const mapped: Product[] = data.map((p: any) => ({
+        const mapped: ProductListDTO[] = data.map((p: any) => ({
           ...p,
-          profit: (p.priceARS - p.costCLP * conversionRate) * p.quantity,
+          profit: (p.priceARS - p.costCLP * (conversionRate ?? 1)) * p.quantity,
         }));
         setProducts(mapped);
       })
@@ -65,20 +79,9 @@ export default function ProfitChecker() {
       description: url,
       date: new Date().toISOString(),
       results: [
-        {
-          parameter: "Costo CLP",
-          value: parsedCost,
-          unit: "CLP",
-        },
-        {
-          parameter: "Precio ARS",
-          value: parsedPrice,
-          unit: "ARS",
-        },
-        {
-          parameter: "Cantidad",
-          value: quantity,
-        },
+        { parameter: "Costo CLP", value: parsedCost, unit: "CLP" },
+        { parameter: "Precio ARS", value: parsedPrice, unit: "ARS" },
+        { parameter: "Cantidad", value: quantity },
       ],
     };
 
@@ -107,18 +110,7 @@ export default function ProfitChecker() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
-      {/* Tasa de conversión */}
-      <div>
-        <Label>Tasa de cambio CLP → ARS</Label>
-        <Input
-          type="number"
-          value={conversionRate}
-          step={0.01}
-          min={0}
-          onChange={(e) => setConversionRate(parseFloat(e.target.value))}
-        />
-      </div>
-
+       <ConversionRateInput className="mb-4" />
       {/* Formulario */}
       <Card>
         <CardHeader>
@@ -145,11 +137,7 @@ export default function ProfitChecker() {
             <div>
               <Label>
                 Costo en CLP{" "}
-                <ReactCountryFlag
-                  countryCode="CL"
-                  svg
-                  style={{ width: 16, height: 16 }}
-                />
+                <ReactCountryFlag countryCode="CL" svg style={{ width: 16, height: 16 }} />
               </Label>
               <Input
                 type="number"
@@ -162,11 +150,7 @@ export default function ProfitChecker() {
             <div>
               <Label>
                 Precio de venta ARS{" "}
-                <ReactCountryFlag
-                  countryCode="AR"
-                  svg
-                  style={{ width: 16, height: 16 }}
-                />
+                <ReactCountryFlag countryCode="AR" svg style={{ width: 16, height: 16 }} />
               </Label>
               <Input
                 type="number"
@@ -189,8 +173,7 @@ export default function ProfitChecker() {
             {/* Costo invertido */}
             {parsedCost > 0 && (
               <div className="p-4 rounded-lg font-bold text-lg bg-yellow-100 text-yellow-700">
-                Costo invertido: $
-                {Math.round(convertedCostARS).toLocaleString("es-AR")} ARS
+                Costo invertido: ${Math.round(convertedCostARS).toLocaleString("es-AR")} ARS
               </div>
             )}
 
@@ -203,8 +186,7 @@ export default function ProfitChecker() {
                     : "bg-red-100 text-red-700"
                 }`}
               >
-                Ganancia estimada: $
-                {Math.round(profit).toLocaleString("es-AR")}
+                Ganancia estimada: ${Math.round(profit).toLocaleString("es-AR")}
               </div>
             )}
 
