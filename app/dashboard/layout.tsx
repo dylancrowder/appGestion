@@ -10,7 +10,7 @@ import { useProtectedRoute } from "@/hooks/use-protectedroute";
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const { loading } = useProtectedRoute();
 
-  if (loading) return <div>Cargando...</div>; // opcional: skeleton o spinner
+  if (loading) return <div>Cargando...</div>; 
 
   return (
     <SidebarProvider>

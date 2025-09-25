@@ -9,11 +9,10 @@ export const useProtectedRoute = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
-
     if (!token) {
-      router.replace("/login"); // si no hay token, redirige
+      router.replace("/login");
     } else {
-      setLoading(false); // usuario válido
+      setLoading(false);
     }
   }, [router]);
 

@@ -66,7 +66,7 @@ export default function ProductList() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sortByProfit, setSortByProfit] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  const token = localStorage.getItem("accessToken");
  const {
     conversionRate,
     setConversionRate,
@@ -84,20 +84,31 @@ export default function ProductList() {
 
   useEffect(() => { fetchProducts(); }, []);
 
-  const fetchProducts = async () => {
-    if (!API_URL) return toast.error("API_URL no está definida");
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/compras`);
-      if (!res.ok) throw new Error("Error cargando productos");
-      const data = await res.json();
-      setProducts(data);
-    } catch (err: any) {
-      toast.error("Error al cargar productos");
-      console.error(err);
-      
-    } finally { setLoading(false); }
-  };
+const fetchProducts = async () => {
+  if (!API_URL) return toast.error("API_URL no está definida");
+  setLoading(true);
+
+  try {
+
+    const res = await fetch(`${API_URL}/inventory`, {
+      method: "GET", 
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) throw new Error("Error cargando productos");
+
+    const data = await res.json();
+    setProducts(data);
+  } catch (err: any) {
+    toast.error("Error al cargar productos");
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
 
 
   // enviar el producto
@@ -115,9 +126,12 @@ export default function ProductList() {
     setLoading(true);
     try {
       if (editingId) {
-        const res = await fetch(`${API_URL}/compras/${editingId}`, {
+        const res = await fetch(`${API_URL}/inventory/${editingId}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+             headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // 👈 lo mandás en los headers
+      },
           body: JSON.stringify(newProduct),
         });
         if (!res.ok) throw new Error("Error al actualizar producto");
@@ -125,9 +139,13 @@ export default function ProductList() {
         toast.success("Producto editado correctamente");
         setEditingId(null);
       } else {
-        const res = await fetch(`${API_URL}/compras/create`, {
+        const res = await fetch(`${API_URL}/inventory/create`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+
+             headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`},
+      
           body: JSON.stringify(newProduct),
         });
         if (!res.ok) throw new Error("Error al guardar producto");
@@ -155,7 +173,7 @@ export default function ProductList() {
     if (!API_URL || !product) return toast.error("No se pudo eliminar");
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/compras/${product._id}`, { method: "DELETE" });
+      const res = await fetch(`${API_URL}/inventory/${product._id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Error al eliminar producto");
       setProducts(prev => prev.filter(p => p._id !== product._id));
       toast.success("Producto eliminado correctamente");
